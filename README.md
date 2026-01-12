@@ -13,7 +13,10 @@ What you need for the project:
 
 **connection sheet**
 <br>
-<img width="2400" height="1600" alt="ESP32 + MRF522" src="https://github.com/user-attachments/assets/59977e35-06e1-4483-920d-2e9424841b23" />
+<img width="642" height="829" alt="image" src="https://github.com/user-attachments/assets/74ef7bc5-b948-4756-adf3-8f59fe4de27b" />
+- the light green wire is a common ground shared by all modules
+- the blue wire next to the light green wire is used for powering the ESP32 and is 5V   ( this wire can be replaced by plugging in the usb-C cable to the ESP32 )
+- both the buzzer and the RC522 module should be getting 3.3V either from an external power source or from the ESP32
 
 - Any buzzer should work with this setup because buzzers in general aren't very complicated
 - the GPIO pins defined in the code may varry so you can change them accordingly to your liking
