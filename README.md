@@ -30,7 +30,3 @@ this image is only an example
 
 
 
-all the parts that i used for the project will be listed here :
-
-
-
