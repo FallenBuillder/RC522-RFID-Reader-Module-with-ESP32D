@@ -27,6 +27,11 @@ What you need for the project:
 this image is only an example
 
 
+This is how i connected everything together
+<img width="1536" height="2048" alt="image" src="https://github.com/user-attachments/assets/a10a1c53-af06-4be9-813a-f053009c06cf" />
+
+
+
 
 
 
