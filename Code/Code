@@ -1,0 +1,241 @@
+// Original source: https://www.youtube.com/yellowpurple ( no clue from where he got the code from )
+// Fixed for modern Arduino compiler compatibility
+#include <SPI.h>
+#include <MFRC522.h>
+#include <string>
+
+#define RST_PIN         22           
+#define SS_PIN          21       
+#define BUZZER_PIN      15    
+
+//Change this field to READ in order to READ data from the card and then input your code
+
+//Change this field to WRITE in order to WRITE data to your card 
+/*In order to write the data that you actually want the card change the SECTOR AND BLOCK SETTINGS accordingly*/
+#define ACTION       "READ"
+//Type the UUID that you want to match when READING the bytes of the card..
+#define UUID_MATCH   "0202030405060708090A0B0C0D0E0F10"
+
+MFRC522 mfrc522(SS_PIN, RST_PIN);   
+MFRC522::MIFARE_Key key;
+
+void setup() {
+    Serial.begin(115200); 
+    while (!Serial);    
+    SPI.begin();        
+    mfrc522.PCD_Init(); 
+    pinMode(BUZZER_PIN, OUTPUT);
+
+    // Set the default factory key (FFFFFFFFFFFF)
+    for (byte i = 0; i < 6; i++) {
+        key.keyByte[i] = 0xFF;
+    }
+
+    Serial.println(F("Scan a MIFARE Classic PICC to demonstrate read and write."));
+}
+
+
+void loop() {
+    //for me the buzzer doesnt beep when its on HIGH for you it might be diffrent so you might wanna change this and also swap the values in the read/write beeping
+    digitalWrite(BUZZER_PIN, HIGH);  
+
+
+    //if statment responsible for reding and comparing the data
+    if(ACTION == "READ")
+    {
+        if (!mfrc522.PICC_IsNewCardPresent() || !mfrc522.PICC_ReadCardSerial()) return;
+
+        byte sector = 1; //only change these values if necessary
+        byte blockAddr = 4; //only change these values if necessary
+        byte trailerBlock = 7; //only change these values if necessary
+        MFRC522::StatusCode status;
+        byte buffer[18];
+        byte size = sizeof(buffer);
+
+        status = (MFRC522::StatusCode)mfrc522.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, trailerBlock, &key, &(mfrc522.uid));
+        if (status != MFRC522::STATUS_OK) {
+            Serial.println(F("Authentication failed!"));
+            mfrc522.PCD_StopCrypto1();
+            return;
+        }
+
+        //Reads the data
+        status = (MFRC522::StatusCode)mfrc522.MIFARE_Read(blockAddr, buffer, &size);
+        if (status == MFRC522::STATUS_OK) {
+            Serial.print(F("Data in Block 4: "));
+            dump_byte_array(buffer, 16);
+            Serial.println();
+
+
+            String readData = dump_byte_array_compare(buffer, 16);
+
+            if (readData == UUID_MATCH) {
+                Serial.println(F("UUID correct PUT YOUR CODE HERE"));
+
+
+                /*
+                
+                    PUT YOUR CODE HERE
+                    PUT YOUR CODE HERE
+                    PUT YOUR CODE HERE
+                    PUT YOUR CODE HERE
+                    PUT YOUR CODE HERE
+
+                    you can delete this comment 
+                */
+
+                //Makes the buzzer Beep you can change this logic to match a LED
+                for(int i=1;i>=0;i--){
+                    digitalWrite(BUZZER_PIN, HIGH);  
+                    delay(100);                      
+                    digitalWrite(BUZZER_PIN, LOW);   
+                    delay(100);     
+                }
+                 
+                
+            }
+            else
+            {
+                Serial.println(F("The data on the card doesnt match the UUID that was specified"));
+            }
+        }
+
+
+    mfrc522.PICC_HaltA();
+    mfrc522.PCD_StopCrypto1();
+    }
+
+
+
+
+
+
+
+
+
+    //if statment responsible for writing the data
+    if (ACTION == "WRITE")
+    {
+        // Look for new cards
+        if ( ! mfrc522.PICC_IsNewCardPresent())
+            return;
+
+        // Select a card 
+        if ( ! mfrc522.PICC_ReadCardSerial())
+            return;
+
+        // Show Card UID
+        Serial.print(F("Card UID:"));
+        dump_byte_array(mfrc522.uid.uidByte, mfrc522.uid.size);
+        Serial.println();
+
+        // Check compatibility
+        MFRC522::PICC_Type piccType = mfrc522.PICC_GetType(mfrc522.uid.sak);
+        Serial.print(F("PICC type: "));
+        Serial.println(mfrc522.PICC_GetTypeName(piccType));
+
+        if (    piccType != MFRC522::PICC_TYPE_MIFARE_MINI
+            &&  piccType != MFRC522::PICC_TYPE_MIFARE_1K
+            &&  piccType != MFRC522::PICC_TYPE_MIFARE_4K) {
+            Serial.println(F("This sample only works with MIFARE Classic cards."));
+            return;
+        }
+
+        // --- SECTOR AND BLOCK SETTINGS ---
+        byte sector         = 1;
+        byte blockAddr      = 4; // Sector 1 starts at Block 4. (Block 0 is read-only Manufacturer data)
+        byte dataBlock[]    = {
+        //Change these values so that you write the UUID that you actually need to the card 
+            0x02, 0x02, 0x03, 0x04,
+            0x05, 0x06, 0x07, 0x08,
+            0x09, 0x0A, 0x0B, 0x0C,
+            0x0D, 0x0E, 0x0F, 0x10
+        };
+        byte trailerBlock   = 7;
+    
+        MFRC522::StatusCode status;
+        byte buffer[18];
+        byte size = sizeof(buffer);
+
+        //Authenticate using Key A
+        Serial.println(F("Authenticating using key A..."));
+        status = (MFRC522::StatusCode)mfrc522.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, trailerBlock, &key, &(mfrc522.uid));
+        if (status != MFRC522::STATUS_OK) {
+            Serial.print(F("PCD_Authenticate() failed: "));
+            Serial.println(mfrc522.GetStatusCodeName(status));
+            return;
+        }
+        //Read current data
+        Serial.println(F("Current data in sector:"));
+        mfrc522.PICC_DumpMifareClassicSectorToSerial(&(mfrc522.uid), &key, sector);
+        Serial.println();
+
+        //Authenticate using Key B for writing
+        Serial.println(F("Authenticating again using key B..."));
+        status = (MFRC522::StatusCode)mfrc522.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_B, trailerBlock, &key, &(mfrc522.uid));
+        if (status != MFRC522::STATUS_OK) {
+            Serial.print(F("PCD_Authenticate() failed: "));
+            Serial.println(mfrc522.GetStatusCodeName(status));
+            return;
+        }
+        //Write data
+        Serial.print(F("Writing data into block ")); Serial.print(blockAddr); Serial.println(F("..."));
+        status = (MFRC522::StatusCode)mfrc522.MIFARE_Write(blockAddr, dataBlock, 16);
+        if (status != MFRC522::STATUS_OK) {
+            Serial.print(F("MIFARE_Write() failed: "));
+            Serial.println(mfrc522.GetStatusCodeName(status));
+        }
+        Serial.println();
+
+        //Verify the write
+        Serial.print(F("Reading data from block ")); Serial.print(blockAddr); Serial.println(F("..."));
+        status = (MFRC522::StatusCode)mfrc522.MIFARE_Read(blockAddr, buffer, &size);
+        if (status != MFRC522::STATUS_OK) {
+            Serial.print(F("MIFARE_Read() failed: "));
+            Serial.println(mfrc522.GetStatusCodeName(status));
+        }
+
+        Serial.println(F("Checking result..."));
+        byte count = 0;
+        for (byte i = 0; i < 16; i++) {
+            if (buffer[i] == dataBlock[i]) count++;
+        }
+        if (count == 16) {
+            Serial.println(F("Success! Data matches."));
+            for (int i=2;i>=0;i--){
+                digitalWrite(BUZZER_PIN, HIGH);  
+                delay(100);                      
+                digitalWrite(BUZZER_PIN, LOW);   
+                delay(100);     
+            }
+             
+        } else {
+            Serial.println(F("Failure: Data does not match."));
+        }
+        Serial.println();
+
+        // Halt PICC and stop encryption on PCD
+        mfrc522.PICC_HaltA();
+        mfrc522.PCD_StopCrypto1();
+        }
+    }
+
+String dump_byte_array_compare(byte *buffer, byte bufferSize) {
+    String ReturnStatment = "";
+    for (byte i = 0; i < bufferSize; i++) {
+        // Add a leading zero if the byte is less than 16 (0x10)
+        if (buffer[i] < 0x10) {
+            ReturnStatment += "0";
+        }
+        ReturnStatment += String(buffer[i], HEX);
+    }
+    ReturnStatment.toUpperCase();
+    return ReturnStatment;
+}
+
+void dump_byte_array(byte *buffer, byte bufferSize) {
+    for (byte i = 0; i < bufferSize; i++) {
+        Serial.print(buffer[i] < 0x10 ? " 0" : " ");
+        Serial.print(buffer[i], HEX);
+    }
+}
