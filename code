@@ -6,7 +6,7 @@
 
 #define RST_PIN         22           
 #define SS_PIN          21       
-#define BUZZER_PIN      26    
+#define BUZZER_PIN      15    
 
 //Change this field to READ in order to READ data from the card and then input your code
 
