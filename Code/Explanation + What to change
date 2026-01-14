@@ -1,1 +1,79 @@
+As you may already know, the provided code is used to READ or WRITE data to an RFID card using the RC522.
+
+Before doing anything, ensure that you have installed the MFRC522 library by GithubCommunity. If you type "MFRC522" into the Arduino Library Manager, it should appear there.
+
+Configuration
+To define what the code should do, change the ACTION field at the top of the script. This field can be set to either "READ" or "WRITE":
+
+#define ACTION "READ"  // To read data
+// OR
+#define ACTION "WRITE" // To write data
+
+
+
+Reading Mode
+If the field content is READ, the code will proceed to read data from the specified blocks and sectors of the card. Additionally, the buzzer will beep if the value in the read data block matches the value in this field:
+
+#define UUID_MATCH "0202030405060708090A0B0C0D0E0F10"
+
+
+
+Writing Mode
+
+If the field content is WRITE, the code will attempt to write data to the card according to the specified sector and blockAddr.
+
+If you want to write data to a different location on the card, you can change these values, but you must also update the READ logic to match:
+
+byte sector    = 1;
+byte blockAddr = 4;
+
+To change the specific value being written to the card, modify the dataBlock[] array. For example, you can change it from this:
+
+0x02, 0x02, 0x03, 0x04,
+0x05, 0x06, 0x07, 0x08,
+0x09, 0x0A, 0x0B, 0x0C,
+0x0D, 0x0E, 0x0F, 0x10
+
+To this:
+
+0xFF, 0xFF, 0xFF, 0xFF,
+0xFF, 0xFF, 0xFF, 0xFF,
+0xFF, 0xFF, 0xFF, 0xFF,
+0xFF, 0xFF, 0xFF, 0xFF
+
+
+Buzzer Logic
+
+If the data is successfully written to the card, the buzzer will beep 3 times.
+If the data is successfully read and matches the provided UUID_MATCH, the buzzer will beep 2 times.
+
+
+
+
+Troubleshooting:
+
+1. Pin Connections: Locate your RST_PIN, SS_PIN, and BUZZER_PIN (most likely labeled 'S' on the buzzer) and ensure they match the pin values specified in the code:
+
+#define RST_PIN 22
+#define SS_PIN 21
+#define BUZZER_PIN 15
+
+2. Card Compatibility: Ensure your card is both readable and writable. Some cards do not support writing, in which case that part of the code will not work.
+3. Library Installation: Double-check that the MFRC522 library is correctly installed.
+4. COM Port: Make sure you have selected the correct COM port for programming your ESP32 in the Arduino IDE.
+5. Board Type: Ensure the correct board type is selected in the Tools section.
+6. Hardware Check: Ensure no wires are loose and all pins are soldered properly.
+7. Power & Ground: Confirm that all components share a common ground and that the power supply is correct.
+
+
+
+
+
+
+
+
+
+
+
+
 
